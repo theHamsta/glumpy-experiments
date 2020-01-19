@@ -66,6 +66,7 @@ class Slab(object):
 
     def swap(self):
         self.Ping, self.Pong = self.Pong, self.Ping
+        self._ping_cuda, self._pong_cuda = self._pong_cuda, self._ping_cuda
 
     @property
     def ping_array(self):
@@ -85,7 +86,7 @@ __global__ void kernel(int width, int height)
     unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
     if (x < 400 && y < 400) {
-        float data = 1.f;
+        float data = x / 400.f;
         // Write to output surface
         surf2Dwrite(data, surf, x*4, y);
     }
@@ -123,6 +124,7 @@ t = 0
 @window.event
 def on_draw(dt):
 
+    surface_ref.set_array(Density.ping_array)
     kernel_function(np.int32(400), np.int32(400), block=(16,16,1), grid=((400+1)//16+1,(400+1)//16+1))
 
     gl.glViewport(0,0,window.width,window.height)
@@ -142,6 +144,5 @@ def on_draw(dt):
     prog_visualize["Scale"] =  1.0/window.width, 1.0/window.height
     prog_visualize.draw(gl.GL_TRIANGLE_STRIP)
     Density.swap()
-    surface_ref.set_array(Density.ping_array)
 
 app.run()
